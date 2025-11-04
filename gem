@@ -1,1529 +1,719 @@
---[[
-    🎮 PROFESYONEL ROBLOX EXECUTOR SCRIPT
-    Modern, Şık ve Profesyonel GUI Tasarımı
-]]
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🔥 Premium Script Hub 🔥",
+   LoadingTitle = "⚡ Premium Hub Loading...",
+   LoadingSubtitle = "by Premium Script",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "PremiumHub",
+      FileName = "PremiumConfig"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false
+})
 
 -- Services
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Variables
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character
-local HumanoidRootPart = nil
-
--- Character yüklenmeyi bekle
-if not Character then
-    Character = LocalPlayer.CharacterAdded:Wait()
-end
-
--- HumanoidRootPart'i güvenli şekilde bekle
-if Character then
-    local hrp = Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        hrp = Character:WaitForChild("HumanoidRootPart", 10)
-    end
-    HumanoidRootPart = hrp
-end
-
-local Camera = Workspace.CurrentCamera
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Humanoid = Character:WaitForChild("Humanoid")
 
 -- States
-local InfiniteGems = false
-local AutoEggOpener = false
-local InfiniteMoney = false
-local Noclip = false
-local Fly = false
-local ESP = false
+local States = {
+   ESP = false,
+   ESPBox = false,
+   ESPName = false,
+   ESPHealth = false,
+   ESPDistance = false,
+   ESPSkeleton = false,
+   Fly = false,
+   Noclip = false,
+   Aimbot = false,
+   Triggerbot = false,
+   Wallhack = false,
+   Mevlana = false,
+   InfiniteJump = false,
+   NoRecoil = false
+}
 
--- Gem Variables
-local GemValue = nil
-local AllGemValues = {}
-local HookedRemotes = {}
+-- ESP Objects
+local ESPObjects = {}
+local FlySpeed = 50
+local AimbotFOV = 100
+local MevlanaSpeed = 20
+local currentPlayerIndex = 1
+local MevlanaKeybind = "X"
 
--- Modern GUI Creation
-local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "ProScriptHub"
-MainGui.ResetOnSpawn = false
-MainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-MainGui.DisplayOrder = 999
-MainGui.Enabled = false
-MainGui.Parent = CoreGui
+-- Mevlana bağlantıları global tut
+local MevlanaSpinConnection = nil
+local MevlanaShootConnection = nil
 
--- Main Container (Ultra Modern Dark Theme)
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 480, 0, 680)
-MainFrame.Position = UDim2.new(0.5, -240, 0.5, -340)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = MainGui
+-- Main Tab
+local MainTab = Window:CreateTab("🏠 Main", 4483362458)
 
--- Glow Effect
-local MainGlow = Instance.new("ImageLabel")
-MainGlow.Size = UDim2.new(1, 30, 1, 30)
-MainGlow.Position = UDim2.new(0, -15, 0, -15)
-MainGlow.BackgroundTransparency = 1
-MainGlow.Image = "rbxassetid://1316045217"
-MainGlow.ImageColor3 = Color3.fromRGB(70, 150, 255)
-MainGlow.ImageTransparency = 0.8
-MainGlow.ScaleType = Enum.ScaleType.Slice
-MainGlow.SliceCenter = Rect.new(10, 10, 118, 118)
-MainGlow.ZIndex = 0
-MainGlow.Parent = MainFrame
+-- Combat Section
+MainTab:CreateSection("⚔️ Combat")
 
--- Smooth Corner
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 18)
-MainCorner.Parent = MainFrame
+-- Gelişmiş ESP Sistemi
+local function CreateAdvancedESP(player)
+   if player == LocalPlayer then return end
+   if ESPObjects[player] then return end
+   
+   local character = player.Character
+   if not character then return end
+   
+   local ESPFolder = Instance.new("Folder")
+   ESPFolder.Name = "ESP_"..player.Name
+   ESPFolder.Parent = character
+   
+   -- Highlight (Ana ESP)
+   local highlight = Instance.new("Highlight")
+   highlight.Name = "ESP_Highlight"
+   highlight.FillColor = Color3.fromRGB(255, 0, 0)
+   highlight.FillTransparency = 0.5
+   highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+   highlight.OutlineTransparency = 0
+   highlight.Parent = character
+   
+   -- BillboardGui (İsim, Sağlık, Mesafe)
+   local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+   if humanoidRootPart then
+      local billboardGui = Instance.new("BillboardGui")
+      billboardGui.Name = "ESP_Billboard"
+      billboardGui.Adornee = humanoidRootPart
+      billboardGui.Size = UDim2.new(0, 200, 0, 100)
+      billboardGui.StudsOffset = Vector3.new(0, 3, 0)
+      billboardGui.AlwaysOnTop = true
+      billboardGui.Parent = ESPFolder
+      
+      local frame = Instance.new("Frame")
+      frame.Size = UDim2.new(1, 0, 1, 0)
+      frame.BackgroundTransparency = 1
+      frame.Parent = billboardGui
+      
+      -- İsim
+      local nameLabel = Instance.new("TextLabel")
+      nameLabel.Name = "NameLabel"
+      nameLabel.Size = UDim2.new(1, 0, 0, 20)
+      nameLabel.Position = UDim2.new(0, 0, 0, 0)
+      nameLabel.BackgroundTransparency = 1
+      nameLabel.Text = player.Name
+      nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+      nameLabel.TextStrokeTransparency = 0
+      nameLabel.TextScaled = false
+      nameLabel.TextSize = 14
+      nameLabel.Font = Enum.Font.SourceSansBold
+      nameLabel.Parent = frame
+      
+      -- Sağlık
+      local healthLabel = Instance.new("TextLabel")
+      healthLabel.Name = "HealthLabel"
+      healthLabel.Size = UDim2.new(1, 0, 0, 20)
+      healthLabel.Position = UDim2.new(0, 0, 0, 20)
+      healthLabel.BackgroundTransparency = 1
+      healthLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+      healthLabel.TextStrokeTransparency = 0
+      healthLabel.TextScaled = false
+      healthLabel.TextSize = 14
+      healthLabel.Font = Enum.Font.SourceSansBold
+      healthLabel.Parent = frame
+      
+      -- Mesafe
+      local distanceLabel = Instance.new("TextLabel")
+      distanceLabel.Name = "DistanceLabel"
+      distanceLabel.Size = UDim2.new(1, 0, 0, 20)
+      distanceLabel.Position = UDim2.new(0, 0, 0, 40)
+      distanceLabel.BackgroundTransparency = 1
+      distanceLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+      distanceLabel.TextStrokeTransparency = 0
+      distanceLabel.TextScaled = false
+      distanceLabel.TextSize = 14
+      distanceLabel.Font = Enum.Font.SourceSansBold
+      distanceLabel.Parent = frame
+      
+      -- Box ESP
+      local boxFrame = Instance.new("Frame")
+      boxFrame.Name = "ESP_Box"
+      boxFrame.Size = UDim2.new(1, 0, 1, 0)
+      boxFrame.BackgroundTransparency = 1
+      boxFrame.BorderSizePixel = 2
+      boxFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+      boxFrame.Parent = frame
+      
+      -- Update Loop
+      local updateConnection
+      updateConnection = RunService.RenderStepped:Connect(function()
+         if not States.ESP or not character or not character.Parent then
+            if updateConnection then updateConnection:Disconnect() end
+            return
+         end
+         
+         local targetHumanoid = character:FindFirstChild("Humanoid")
+         if targetHumanoid then
+            -- Sağlık güncelleme
+            local health = math.floor(targetHumanoid.Health)
+            local maxHealth = math.floor(targetHumanoid.MaxHealth)
+            healthLabel.Text = "HP: "..health.."/"..maxHealth
+            
+            -- Renk değiştirme (sağlığa göre)
+            local healthPercent = health / maxHealth
+            if healthPercent > 0.5 then
+               healthLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            elseif healthPercent > 0.25 then
+               healthLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+            else
+               healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+            end
+         end
+         
+         -- Mesafe güncelleme
+         if HumanoidRootPart and humanoidRootPart then
+            local distance = (HumanoidRootPart.Position - humanoidRootPart.Position).Magnitude
+            distanceLabel.Text = math.floor(distance).." studs"
+         end
+      end)
+   end
+   
+   ESPObjects[player] = {Folder = ESPFolder, Highlight = highlight}
+end
 
--- Premium Border
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 2
-MainStroke.Color = Color3.fromRGB(70, 150, 255)
-MainStroke.Transparency = 0.5
-MainStroke.Parent = MainFrame
+local function RemoveESP(player)
+   if ESPObjects[player] then
+      if ESPObjects[player].Highlight then
+         ESPObjects[player].Highlight:Destroy()
+      end
+      if ESPObjects[player].Folder then
+         ESPObjects[player].Folder:Destroy()
+      end
+      ESPObjects[player] = nil
+   end
+end
 
--- Gradient Background
-local MainGradient = Instance.new("UIGradient")
-MainGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 18, 25)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 35))
+-- ESP Toggle
+MainTab:CreateToggle({
+   Name = "ESP (Gelişmiş)",
+   CurrentValue = false,
+   Flag = "ESP",
+   Callback = function(Value)
+      States.ESP = Value
+      if Value then
+         for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+               CreateAdvancedESP(player)
+            end
+         end
+         
+         Players.PlayerAdded:Connect(function(player)
+            if States.ESP then
+               task.wait(1)
+               CreateAdvancedESP(player)
+            end
+         end)
+         
+         Players.PlayerRemoving:Connect(function(player)
+            RemoveESP(player)
+         end)
+      else
+         for _, player in pairs(Players:GetPlayers()) do
+            RemoveESP(player)
+         end
+      end
+   end,
 })
-MainGradient.Rotation = 45
-MainGradient.Parent = MainFrame
 
--- Top Bar
-local TopBar = Instance.new("Frame")
-TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 60)
-TopBar.Position = UDim2.new(0, 0, 0, 0)
-TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-TopBar.BorderSizePixel = 0
-TopBar.ZIndex = 5
-TopBar.Parent = MainFrame
+-- Aimbot Function
+local function GetClosestPlayer()
+   local closestPlayer = nil
+   local shortestDistance = AimbotFOV
+   local mousePos = UserInputService:GetMouseLocation()
+   
+   for _, player in pairs(Players:GetPlayers()) do
+      if player ~= LocalPlayer then
+         local character = player.Character
+         if character then
+            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoidRootPart and humanoid and humanoid.Health > 0 then
+               local screenPoint, onScreen = Camera:WorldToViewportPoint(humanoidRootPart.Position)
+               if onScreen then
+                  local distance = (Vector2.new(mousePos.X, mousePos.Y) - Vector2.new(screenPoint.X, screenPoint.Y)).Magnitude
+                  
+                  if distance < shortestDistance then
+                     shortestDistance = distance
+                     closestPlayer = player
+                  end
+               end
+            end
+         end
+      end
+   end
+   
+   return closestPlayer
+end
 
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 18)
-TopCorner.Parent = TopBar
-
--- Top Bar Gradient
-local TopGradient = Instance.new("UIGradient")
-TopGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 15, 22)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 30))
+MainTab:CreateToggle({
+   Name = "Aimbot",
+   CurrentValue = false,
+   Flag = "Aimbot",
+   Callback = function(Value)
+      States.Aimbot = Value
+      if Value then
+         local connection
+         connection = RunService.Heartbeat:Connect(function()
+            if not States.Aimbot then
+               connection:Disconnect()
+               return
+            end
+            
+            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+               local target = GetClosestPlayer()
+               if target and target.Character then
+                  local targetPart = target.Character:FindFirstChild("Head")
+                  if targetPart then
+                     Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetPart.Position)
+                  end
+               end
+            end
+         end)
+      end
+   end,
 })
-TopGradient.Rotation = 90
-TopGradient.Parent = TopBar
 
--- Hamburger Menu Button
-local HamburgerBtn = Instance.new("TextButton")
-HamburgerBtn.Name = "HamburgerBtn"
-HamburgerBtn.Size = UDim2.new(0, 45, 0, 45)
-HamburgerBtn.Position = UDim2.new(0, 12, 0, 7)
-HamburgerBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
-HamburgerBtn.BorderSizePixel = 0
-HamburgerBtn.Text = "☰"
-HamburgerBtn.TextColor3 = Color3.fromRGB(220, 220, 230)
-HamburgerBtn.TextSize = 24
-HamburgerBtn.Font = Enum.Font.GothamBold
-HamburgerBtn.ZIndex = 10
-HamburgerBtn.Parent = TopBar
+MainTab:CreateSlider({
+   Name = "Aimbot FOV",
+   Range = {10, 500},
+   Increment = 10,
+   Suffix = "FOV",
+   CurrentValue = 100,
+   Flag = "AimbotFOV",
+   Callback = function(Value)
+      AimbotFOV = Value
+   end,
+})
 
-local HamburgerCorner = Instance.new("UICorner")
-HamburgerCorner.CornerRadius = UDim.new(0, 10)
-HamburgerCorner.Parent = HamburgerBtn
-
-local HamburgerStroke = Instance.new("UIStroke")
-HamburgerStroke.Thickness = 1.5
-HamburgerStroke.Color = Color3.fromRGB(70, 150, 255)
-HamburgerStroke.Transparency = 0.3
-HamburgerStroke.Parent = HamburgerBtn
-
--- Hamburger Menu Sidebar
-local Sidebar = Instance.new("Frame")
-Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 280, 1, -60)
-Sidebar.Position = UDim2.new(0, -300, 0, 60)
-Sidebar.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
-Sidebar.BorderSizePixel = 0
-Sidebar.ZIndex = 15
-Sidebar.Parent = MainFrame
-
-local SidebarCorner = Instance.new("UICorner")
-SidebarCorner.CornerRadius = UDim.new(0, 18)
-SidebarCorner.Parent = Sidebar
-
-local SidebarStroke = Instance.new("UIStroke")
-SidebarStroke.Thickness = 2
-SidebarStroke.Color = Color3.fromRGB(70, 150, 255)
-SidebarStroke.Transparency = 0.4
-SidebarStroke.Parent = Sidebar
-
--- Sidebar Overlay (Close on click)
-local SidebarOverlay = Instance.new("TextButton")
-SidebarOverlay.Size = UDim2.new(1, 0, 1, 0)
-SidebarOverlay.Position = UDim2.new(0, 0, 0, 0)
-SidebarOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-SidebarOverlay.BackgroundTransparency = 0.7
-SidebarOverlay.BorderSizePixel = 0
-SidebarOverlay.Text = ""
-SidebarOverlay.ZIndex = 14
-SidebarOverlay.Visible = false
-SidebarOverlay.Parent = MainFrame
-
--- Title
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -120, 1, 0)
-Title.Position = UDim2.new(0, 65, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "✨ PRO SCRIPT HUB"
-Title.TextColor3 = Color3.fromRGB(245, 245, 255)
-Title.TextSize = 20
-Title.Font = Enum.Font.GothamBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextStrokeTransparency = 0.8
-Title.TextStrokeColor3 = Color3.fromRGB(70, 150, 255)
-Title.ZIndex = 6
-Title.Parent = TopBar
-
--- Close Button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 40, 0, 40)
-CloseBtn.Position = UDim2.new(1, -48, 0, 10)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(200, 200, 210)
-CloseBtn.TextSize = 22
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.ZIndex = 10
-CloseBtn.Parent = TopBar
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 10)
-CloseCorner.Parent = CloseBtn
-
-local CloseStroke = Instance.new("UIStroke")
-CloseStroke.Thickness = 1.5
-CloseStroke.Color = Color3.fromRGB(240, 70, 70)
-CloseStroke.Transparency = 0.5
-CloseStroke.Parent = CloseBtn
-
--- Hamburger Menu Animations
-local SidebarOpen = false
-
-HamburgerBtn.MouseEnter:Connect(function()
-    TweenService:Create(HamburgerBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(38, 38, 48),
-        TextColor3 = Color3.fromRGB(70, 150, 255)
-    }):Play()
-    TweenService:Create(HamburgerStroke, TweenInfo.new(0.2), {
-        Transparency = 0
-    }):Play()
-end)
-
-HamburgerBtn.MouseLeave:Connect(function()
-    TweenService:Create(HamburgerBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(28, 28, 38),
-        TextColor3 = Color3.fromRGB(220, 220, 230)
-    }):Play()
-    TweenService:Create(HamburgerStroke, TweenInfo.new(0.2), {
-        Transparency = 0.3
-    }):Play()
-end)
-
-HamburgerBtn.MouseButton1Click:Connect(function()
-    SidebarOpen = not SidebarOpen
-    if SidebarOpen then
-        TweenService:Create(Sidebar, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Position = UDim2.new(0, 0, 0, 60)
-        }):Play()
-        SidebarOverlay.Visible = true
-        TweenService:Create(SidebarOverlay, TweenInfo.new(0.3), {
-            BackgroundTransparency = 0.7
-        }):Play()
-    else
-        TweenService:Create(Sidebar, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, -300, 0, 60)
-        }):Play()
-        TweenService:Create(SidebarOverlay, TweenInfo.new(0.3), {
-            BackgroundTransparency = 1
-        }):Play()
-        wait(0.3)
-        SidebarOverlay.Visible = false
-    end
-end)
-
-SidebarOverlay.MouseButton1Click:Connect(function()
-    SidebarOpen = false
-    TweenService:Create(Sidebar, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-        Position = UDim2.new(0, -300, 0, 60)
-    }):Play()
-    TweenService:Create(SidebarOverlay, TweenInfo.new(0.3), {
-        BackgroundTransparency = 1
-    }):Play()
-    wait(0.3)
-    SidebarOverlay.Visible = false
-end)
-
-CloseBtn.MouseEnter:Connect(function()
-    TweenService:Create(CloseBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(240, 70, 70),
-        TextColor3 = Color3.fromRGB(255, 255, 255)
-    }):Play()
-    TweenService:Create(CloseStroke, TweenInfo.new(0.2), {
-        Transparency = 0
-    }):Play()
-end)
-
-CloseBtn.MouseLeave:Connect(function()
-    TweenService:Create(CloseBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(35, 35, 45),
-        TextColor3 = Color3.fromRGB(200, 200, 210)
-    }):Play()
-    TweenService:Create(CloseStroke, TweenInfo.new(0.2), {
-        Transparency = 0.5
-    }):Play()
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    MainGui.Enabled = false
-    SidebarOpen = false
-    TweenService:Create(Sidebar, TweenInfo.new(0.3), {
-        Position = UDim2.new(0, -300, 0, 60)
-    }):Play()
-    SidebarOverlay.Visible = false
-end)
-
--- Sidebar Content
-local SidebarContent = Instance.new("ScrollingFrame")
-SidebarContent.Name = "SidebarContent"
-SidebarContent.Size = UDim2.new(1, -20, 1, -20)
-SidebarContent.Position = UDim2.new(0, 10, 0, 10)
-SidebarContent.BackgroundTransparency = 1
-SidebarContent.BorderSizePixel = 0
-SidebarContent.ScrollBarThickness = 4
-SidebarContent.ScrollBarImageColor3 = Color3.fromRGB(70, 150, 255)
-SidebarContent.ZIndex = 16
-SidebarContent.Parent = Sidebar
-
-local SidebarLayout = Instance.new("UIListLayout")
-SidebarLayout.Padding = UDim.new(0, 12)
-SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-SidebarLayout.Parent = SidebarContent
-
--- Sidebar Title
-local SidebarTitle = Instance.new("TextLabel")
-SidebarTitle.Size = UDim2.new(1, -20, 0, 40)
-SidebarTitle.Position = UDim2.new(0, 10, 0, 10)
-SidebarTitle.BackgroundTransparency = 1
-SidebarTitle.Text = "📋 MENÜ"
-SidebarTitle.TextColor3 = Color3.fromRGB(240, 240, 250)
-SidebarTitle.TextSize = 22
-SidebarTitle.Font = Enum.Font.GothamBold
-SidebarTitle.TextXAlignment = Enum.TextXAlignment.Left
-SidebarTitle.TextStrokeTransparency = 0.8
-SidebarTitle.TextStrokeColor3 = Color3.fromRGB(70, 150, 255)
-SidebarTitle.ZIndex = 16
-SidebarTitle.LayoutOrder = 0
-SidebarTitle.Parent = SidebarContent
-
--- Sidebar Menu Items
-local function CreateSidebarItem(title, icon, callback)
-    local Item = Instance.new("TextButton")
-    Item.Size = UDim2.new(1, -20, 0, 50)
-    Item.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
-    Item.BorderSizePixel = 0
-    Item.Text = icon .. " " .. title
-    Item.TextColor3 = Color3.fromRGB(220, 220, 230)
-    Item.TextSize = 16
-    Item.Font = Enum.Font.GothamBold
-    Item.AutoButtonColor = false
-    Item.ZIndex = 16
-    Item.Parent = SidebarContent
-    
-    local ItemCorner = Instance.new("UICorner")
-    ItemCorner.CornerRadius = UDim.new(0, 10)
-    ItemCorner.Parent = Item
-    
-    local ItemStroke = Instance.new("UIStroke")
-    ItemStroke.Thickness = 1
-    ItemStroke.Color = Color3.fromRGB(70, 150, 255)
-    ItemStroke.Transparency = 0.7
-    ItemStroke.Parent = Item
-    
-    Item.MouseEnter:Connect(function()
-        TweenService:Create(Item, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(30, 30, 40),
-            TextColor3 = Color3.fromRGB(70, 150, 255)
-        }):Play()
-        TweenService:Create(ItemStroke, TweenInfo.new(0.2), {
-            Transparency = 0.3
-        }):Play()
-    end)
-    
-    Item.MouseLeave:Connect(function()
-        TweenService:Create(Item, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(20, 20, 28),
-            TextColor3 = Color3.fromRGB(220, 220, 230)
-        }):Play()
-        TweenService:Create(ItemStroke, TweenInfo.new(0.2), {
-            Transparency = 0.7
-        }):Play()
-    end)
-    
-    Item.MouseButton1Click:Connect(function()
-        if callback then callback() end
-    end)
-    
-    return Item
-end
-
--- Update Sidebar Layout
-SidebarLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    SidebarContent.CanvasSize = UDim2.new(0, 0, 0, SidebarLayout.AbsoluteContentSize.Y + 20)
-end)
-
--- Content Frame
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.Name = "Content"
-ContentFrame.Size = UDim2.new(1, -20, 1, -70)
-ContentFrame.Position = UDim2.new(0, 10, 0, 70)
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.BorderSizePixel = 0
-ContentFrame.ScrollBarThickness = 6
-ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 150, 255)
-ContentFrame.ZIndex = 6
-ContentFrame.Parent = MainFrame
-
-local ContentLayout = Instance.new("UIListLayout")
-ContentLayout.Padding = UDim.new(0, 14)
-ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ContentLayout.Parent = ContentFrame
-
--- Professional Toggle Function
-local function CreateToggle(title, description, initialState, callback)
-    -- Ana Container (Tıklanabilir TextButton)
-    local ToggleContainer = Instance.new("TextButton")
-    ToggleContainer.Size = UDim2.new(1, 0, 0, 75)
-    ToggleContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
-    ToggleContainer.BorderSizePixel = 0
-    ToggleContainer.Text = ""
-    ToggleContainer.AutoButtonColor = false
-    ToggleContainer.ZIndex = 7
-    ToggleContainer.Parent = ContentFrame
-    
-    -- Gradient Background
-    local ToggleGradient = Instance.new("UIGradient")
-    ToggleGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 32)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 38))
-    })
-    ToggleGradient.Rotation = 90
-    ToggleGradient.Parent = ToggleContainer
-    
-    local ToggleCorner = Instance.new("UICorner")
-    ToggleCorner.CornerRadius = UDim.new(0, 12)
-    ToggleCorner.Parent = ToggleContainer
-    
-    -- Premium Border with Glow
-    local ToggleStroke = Instance.new("UIStroke")
-    ToggleStroke.Thickness = 1.5
-    ToggleStroke.Color = Color3.fromRGB(70, 150, 255)
-    ToggleStroke.Transparency = 0.6
-    ToggleStroke.Parent = ToggleContainer
-    
-    -- Title
-    local ToggleTitle = Instance.new("TextLabel")
-    ToggleTitle.Size = UDim2.new(1, -90, 0, 24)
-    ToggleTitle.Position = UDim2.new(0, 16, 0, 12)
-    ToggleTitle.BackgroundTransparency = 1
-    ToggleTitle.Text = title
-    ToggleTitle.TextColor3 = Color3.fromRGB(245, 245, 250)
-    ToggleTitle.TextSize = 16
-    ToggleTitle.Font = Enum.Font.GothamBold
-    ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
-    ToggleTitle.Parent = ToggleContainer
-    
-    -- Description
-    local ToggleDesc = Instance.new("TextLabel")
-    ToggleDesc.Size = UDim2.new(1, -90, 0, 18)
-    ToggleDesc.Position = UDim2.new(0, 16, 0, 36)
-    ToggleDesc.BackgroundTransparency = 1
-    ToggleDesc.Text = description
-    ToggleDesc.TextColor3 = Color3.fromRGB(160, 160, 170)
-    ToggleDesc.TextSize = 12
-    ToggleDesc.Font = Enum.Font.Gotham
-    ToggleDesc.TextXAlignment = Enum.TextXAlignment.Left
-    ToggleDesc.Parent = ToggleContainer
-    
-    -- Toggle Switch Background
-    local ToggleBg = Instance.new("Frame")
-    ToggleBg.Size = UDim2.new(0, 56, 0, 30)
-    ToggleBg.Position = UDim2.new(1, -72, 0, 22)
-    ToggleBg.BackgroundColor3 = initialState and Color3.fromRGB(70, 150, 255) or Color3.fromRGB(45, 45, 55)
-    ToggleBg.BorderSizePixel = 0
-    ToggleBg.ZIndex = 8
-    ToggleBg.Parent = ToggleContainer
-    
-    -- Toggle Switch Glow
-    local ToggleBgGlow = Instance.new("ImageLabel")
-    ToggleBgGlow.Size = UDim2.new(1, 10, 1, 10)
-    ToggleBgGlow.Position = UDim2.new(0, -5, 0, -5)
-    ToggleBgGlow.BackgroundTransparency = 1
-    ToggleBgGlow.Image = "rbxassetid://1316045217"
-    ToggleBgGlow.ImageColor3 = initialState and Color3.fromRGB(70, 150, 255) or Color3.fromRGB(45, 45, 55)
-    ToggleBgGlow.ImageTransparency = 0.9
-    ToggleBgGlow.ScaleType = Enum.ScaleType.Slice
-    ToggleBgGlow.SliceCenter = Rect.new(10, 10, 118, 118)
-    ToggleBgGlow.ZIndex = 7
-    ToggleBgGlow.Parent = ToggleBg
-    
-    -- Toggle Switch'i tıklanabilir yap
-    local ToggleSwitchBtn = Instance.new("TextButton")
-    ToggleSwitchBtn.Size = UDim2.new(0, 75, 0, 45)
-    ToggleSwitchBtn.Position = UDim2.new(1, -80, 0, 15)
-    ToggleSwitchBtn.BackgroundTransparency = 1
-    ToggleSwitchBtn.BorderSizePixel = 0
-    ToggleSwitchBtn.Text = ""
-    ToggleSwitchBtn.ZIndex = 10
-    ToggleSwitchBtn.Parent = ToggleContainer
-    
-    local ToggleBgCorner = Instance.new("UICorner")
-    ToggleBgCorner.CornerRadius = UDim.new(0, 15)
-    ToggleBgCorner.Parent = ToggleBg
-    
-    -- Toggle Switch Border
-    local ToggleBgStroke = Instance.new("UIStroke")
-    ToggleBgStroke.Thickness = 1.5
-    ToggleBgStroke.Color = initialState and Color3.fromRGB(100, 180, 255) or Color3.fromRGB(60, 60, 70)
-    ToggleBgStroke.Transparency = 0.3
-    ToggleBgStroke.Parent = ToggleBg
-    
-    -- Toggle Switch Dot
-    local ToggleDot = Instance.new("Frame")
-    ToggleDot.Size = UDim2.new(0, 24, 0, 24)
-    ToggleDot.Position = initialState and UDim2.new(1, -27, 0, 3) or UDim2.new(0, 3, 0, 3)
-    ToggleDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleDot.BorderSizePixel = 0
-    ToggleDot.ZIndex = 9
-    ToggleDot.Parent = ToggleBg
-    
-    -- Dot Glow
-    local ToggleDotGlow = Instance.new("ImageLabel")
-    ToggleDotGlow.Size = UDim2.new(1, 8, 1, 8)
-    ToggleDotGlow.Position = UDim2.new(0, -4, 0, -4)
-    ToggleDotGlow.BackgroundTransparency = 1
-    ToggleDotGlow.Image = "rbxassetid://1316045217"
-    ToggleDotGlow.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleDotGlow.ImageTransparency = 0.85
-    ToggleDotGlow.ScaleType = Enum.ScaleType.Slice
-    ToggleDotGlow.SliceCenter = Rect.new(10, 10, 118, 118)
-    ToggleDotGlow.ZIndex = 8
-    ToggleDotGlow.Parent = ToggleDot
-    
-    local ToggleDotCorner = Instance.new("UICorner")
-    ToggleDotCorner.CornerRadius = UDim.new(0, 12)
-    ToggleDotCorner.Parent = ToggleDot
-    
-    -- Hover Effect
-    local HoverFrame = Instance.new("Frame")
-    HoverFrame.Size = UDim2.new(1, 0, 1, 0)
-    HoverFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    HoverFrame.BackgroundTransparency = 1
-    HoverFrame.BorderSizePixel = 0
-    HoverFrame.ZIndex = 1
-    HoverFrame.Parent = ToggleContainer
-    
-    local HoverCorner = Instance.new("UICorner")
-    HoverCorner.CornerRadius = UDim.new(0, 10)
-    HoverCorner.Parent = HoverFrame
-    
-    local state = initialState
-    
-    local function UpdateToggle()
-        if state then
-            TweenService:Create(ToggleBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                BackgroundColor3 = Color3.fromRGB(70, 150, 255)
-            }):Play()
-            TweenService:Create(ToggleDot, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Position = UDim2.new(1, -27, 0, 3)
-            }):Play()
-            TweenService:Create(ToggleBgGlow, TweenInfo.new(0.3), {
-                ImageColor3 = Color3.fromRGB(70, 150, 255),
-                ImageTransparency = 0.7
-            }):Play()
-            TweenService:Create(ToggleBgStroke, TweenInfo.new(0.3), {
-                Color = Color3.fromRGB(100, 180, 255),
-                Transparency = 0.1
-            }):Play()
-        else
-            TweenService:Create(ToggleBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-            }):Play()
-            TweenService:Create(ToggleDot, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0, 3, 0, 3)
-            }):Play()
-            TweenService:Create(ToggleBgGlow, TweenInfo.new(0.3), {
-                ImageColor3 = Color3.fromRGB(45, 45, 55),
-                ImageTransparency = 0.9
-            }):Play()
-            TweenService:Create(ToggleBgStroke, TweenInfo.new(0.3), {
-                Color = Color3.fromRGB(60, 60, 70),
-                Transparency = 0.5
-            }):Play()
-        end
-        callback(state)
-    end
-    
-    -- Hover Animations
-    ToggleContainer.MouseEnter:Connect(function()
-        TweenService:Create(HoverFrame, TweenInfo.new(0.2), {
-            BackgroundTransparency = 0.93
-        }):Play()
-        TweenService:Create(ToggleStroke, TweenInfo.new(0.2), {
-            Color = Color3.fromRGB(100, 180, 255),
-            Transparency = 0.3
-        }):Play()
-    end)
-    
-    ToggleContainer.MouseLeave:Connect(function()
-        TweenService:Create(HoverFrame, TweenInfo.new(0.2), {
-            BackgroundTransparency = 1
-        }):Play()
-        TweenService:Create(ToggleStroke, TweenInfo.new(0.2), {
-            Color = Color3.fromRGB(70, 150, 255),
-            Transparency = 0.6
-        }):Play()
-    end)
-    
-    -- Toggle Click - Container'a tıklama
-    ToggleContainer.MouseButton1Click:Connect(function()
-        state = not state
-        UpdateToggle()
-    end)
-    
-    -- Toggle Click - Switch'e tıklama
-    ToggleSwitchBtn.MouseButton1Click:Connect(function()
-        state = not state
-        UpdateToggle()
-    end)
-    
-    return ToggleContainer
-end
-
--- Gem System
-local function FindGemValue()
-    local gems = {}
-    local mainGem = nil
-    
-    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-    if leaderstats then
-        for _, stat in pairs(leaderstats:GetChildren()) do
-            if stat:IsA("IntValue") or stat:IsA("NumberValue") or stat:IsA("StringValue") then
-                local nameLower = stat.Name:lower()
-                if string.find(nameLower, "gem") or 
-                   string.find(nameLower, "gems") or
-                   string.find(nameLower, "diamond") or
-                   string.find(nameLower, "diamonds") then
-                    table.insert(gems, stat)
-                    if not mainGem then
-                        mainGem = stat
-                    end
-                end
-            end
-        end
-    end
-    
-    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-    if playerGui then
-        for _, gui in pairs(playerGui:GetDescendants()) do
-            if (gui:IsA("IntValue") or gui:IsA("NumberValue") or gui:IsA("StringValue")) then
-                local nameLower = gui.Name:lower()
-                if string.find(nameLower, "gem") or 
-                   string.find(nameLower, "gems") or
-                   string.find(nameLower, "diamond") or
-                   string.find(nameLower, "diamonds") then
-                    table.insert(gems, gui)
-                    if not mainGem then
-                        mainGem = gui
-                    end
-                end
-            end
-        end
-    end
-    
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if (obj:IsA("IntValue") or obj:IsA("NumberValue") or obj:IsA("StringValue")) then
-            local nameLower = obj.Name:lower()
-            if string.find(nameLower, "gem") or 
-               string.find(nameLower, "gems") or
-               string.find(nameLower, "diamond") or
-               string.find(nameLower, "diamonds") then
-                table.insert(gems, obj)
-                if not mainGem then
-                    mainGem = obj
-                end
-            end
-        end
-    end
-    
-    for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
-        if (obj:IsA("IntValue") or obj:IsA("NumberValue") or obj:IsA("StringValue")) then
-            local nameLower = obj.Name:lower()
-            if string.find(nameLower, "gem") or 
-               string.find(nameLower, "gems") or
-               string.find(nameLower, "diamond") or
-               string.find(nameLower, "diamonds") then
-                table.insert(gems, obj)
-                if not mainGem then
-                    mainGem = obj
-                end
-            end
-        end
-    end
-    
-    return mainGem, gems
-end
-
-local GemTextLabels = {} -- TextLabel cache
-local GemUpdateConnection = nil
-local GemTextLabelConnections = {}
-local MaxGemsValue = 99999000000000 -- 99999B için (Global)
-
--- Format: 99999B (Global Function)
-local function FormatGems(value)
-    if not value then value = MaxGemsValue end
-    local billions = value / 1000000000
-    if billions >= 1 then
-        -- 99999B formatı
-        return string.format("%.0f", billions) .. "B"
-    else
-        -- 99999M formatı (milyon)
-        local millions = value / 1000000
-        if millions >= 1 then
-            return string.format("%.0f", millions) .. "M"
-        else
-            return string.format("%.0f", value)
-        end
-    end
-end
-
-local function SetInfiniteGems(enabled)
-    InfiniteGems = enabled
-    
-    if enabled then
-        print("💎💎💎 GEM SİSTEMİ AKTİF EDİLDİ 💎💎💎")
-        
-        -- Gem değerlerini bul
-        GemValue, AllGemValues = FindGemValue()
-        
-        print("💎 " .. #AllGemValues .. " gem değeri bulundu!")
-        for i, val in ipairs(AllGemValues) do
-            print("  - " .. i .. ". " .. val.Name .. " (" .. val.ClassName .. ")")
-        end
-        
-        -- SUPER AGRESIF GEM GÜNCELLEME SİSTEMİ
-        local function UpdateAllGems()
-            if not InfiniteGems then return end
-            
-            -- 1. TÜM GEM DEĞERLERİNİ SET ET
-            for _, val in ipairs(AllGemValues) do
-                if val and val.Parent then
-                    pcall(function()
-                        if val:IsA("IntValue") or val:IsA("NumberValue") then
-                            val.Value = MaxGemsValue
-                        elseif val:IsA("StringValue") then
-                            val.Value = tostring(MaxGemsValue)
-                        end
-                    end)
-                end
+-- Gelişmiş Triggerbot
+MainTab:CreateToggle({
+   Name = "Triggerbot (Gelişmiş)",
+   CurrentValue = false,
+   Flag = "Triggerbot",
+   Callback = function(Value)
+      States.Triggerbot = Value
+      if Value then
+         local connection
+         connection = RunService.Heartbeat:Connect(function()
+            if not States.Triggerbot then
+               connection:Disconnect()
+               return
             end
             
-            -- 2. ANA GEM DEĞERİNİ SET ET
-            if GemValue and GemValue.Parent then
-                pcall(function()
-                    if GemValue:IsA("IntValue") or GemValue:IsA("NumberValue") then
-                        GemValue.Value = MaxGemsValue
-                    elseif GemValue:IsA("StringValue") then
-                        GemValue.Value = tostring(MaxGemsValue)
-                    end
-                end)
-            end
+            -- Mouse ray casting kullanarak hedef tespit et
+            local ray = Camera:ScreenPointToRay(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterDescendantsInstances = {Character}
+            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
             
-            -- 3. LEADERSTATS GEM DEĞERLERİNİ KONTROL ET VE GÜNCELLE
-            local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-            if leaderstats then
-                for _, stat in pairs(leaderstats:GetChildren()) do
-                    if stat:IsA("IntValue") or stat:IsA("NumberValue") then
-                        local nameLower = stat.Name:lower()
-                        if string.find(nameLower, "gem") or 
-                           string.find(nameLower, "gems") or
-                           string.find(nameLower, "diamond") or
-                           string.find(nameLower, "diamonds") then
-                            pcall(function()
-                                stat.Value = MaxGemsValue
-                            end)
-                            
-                            -- Yeni bulunan gem değerini listeye ekle
-                            local alreadyAdded = false
-                            for _, val in ipairs(AllGemValues) do
-                                if val == stat then
-                                    alreadyAdded = true
-                                    break
-                                end
-                            end
-                            if not alreadyAdded then
-                                table.insert(AllGemValues, stat)
-                                print("💎 Yeni gem değeri eklendi: " .. stat.Name)
-                            end
-                        end
-                    end
-                end
-            end
+            local raycastResult = Workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
             
-            -- 4. PLAYERGUI GEM DEĞERLERİNİ KONTROL ET VE GÜNCELLE
-            local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-            if playerGui then
-                for _, gui in pairs(playerGui:GetDescendants()) do
-                    pcall(function()
-                        -- Value objelerini kontrol et
-                        if (gui:IsA("IntValue") or gui:IsA("NumberValue") or gui:IsA("StringValue")) then
-                            local nameLower = gui.Name:lower()
-                            if string.find(nameLower, "gem") or 
-                               string.find(nameLower, "gems") or
-                               string.find(nameLower, "diamond") or
-                               string.find(nameLower, "diamonds") then
-                                if gui:IsA("IntValue") or gui:IsA("NumberValue") then
-                                    gui.Value = MaxGemsValue
-                                elseif gui:IsA("StringValue") then
-                                    gui.Value = tostring(MaxGemsValue)
-                                end
-                                
-                                -- Yeni bulunan gem değerini listeye ekle
-                                local alreadyAdded = false
-                                for _, val in ipairs(AllGemValues) do
-                                    if val == gui then
-                                        alreadyAdded = true
-                                        break
-                                    end
-                                end
-                                if not alreadyAdded then
-                                    table.insert(AllGemValues, gui)
-                                end
-                            end
+            if raycastResult and raycastResult.Instance then
+               local hitPart = raycastResult.Instance
+               local targetCharacter = hitPart.Parent
+               
+               if targetCharacter:FindFirstChild("Humanoid") then
+                  local targetPlayer = Players:GetPlayerFromCharacter(targetCharacter)
+                  if targetPlayer and targetPlayer ~= LocalPlayer then
+                     local targetHumanoid = targetCharacter:FindFirstChild("Humanoid")
+                     if targetHumanoid and targetHumanoid.Health > 0 then
+                        -- Team kontrolü
+                        if not targetPlayer.Team or targetPlayer.Team ~= LocalPlayer.Team then
+                           -- Mouse click simülasyonu
+                           VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                           task.wait(0.05)
+                           VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
                         end
-                        
-                        -- TextLabel'ları kontrol et - SUPER AGRESIF
-                        if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-                            local text = tostring(gui.Text or "")
-                            local nameLower = gui.Name:lower()
-                            
-                            -- Sayı içeren TextLabel'ları bul (virgüllü format dahil)
-                            local cleanText = text:gsub(",", ""):gsub("%s+", "")
-                            local numValue = tonumber(cleanText)
-                            
-                            -- Eğer sayı ise ve gem gösterimi olabilir
-                            if numValue and numValue > 0 and numValue < MaxGemsValue then
-                                local isGemDisplay = false
-                                
-                                -- 1. İsim kontrolü
-                                if string.find(nameLower, "gem") or 
-                                   string.find(nameLower, "gems") or
-                                   string.find(nameLower, "diamond") or
-                                   string.find(nameLower, "diamonds") then
-                                    isGemDisplay = true
-                                end
-                                
-                                -- 2. Parent kontrolleri (10 seviye yukarıya kadar)
-                                local current = gui.Parent
-                                local depth = 0
-                                while current and depth < 10 do
-                                    local currentName = current.Name:lower()
-                                    if string.find(currentName, "gem") or
-                                       string.find(currentName, "diamond") or
-                                       string.find(currentName, "currency") or
-                                       string.find(currentName, "resource") or
-                                       string.find(currentName, "stat") or
-                                       string.find(currentName, "gui") or
-                                       string.find(currentName, "menu") then
-                                        isGemDisplay = true
-                                        break
-                                    end
-                                    current = current.Parent
-                                    depth = depth + 1
-                                end
-                                
-                                -- 3. Sibling kontrolü (ImageLabel/ImageButton varsa)
-                                local parent = gui.Parent
-                                if parent then
-                                    for _, sibling in pairs(parent:GetChildren()) do
-                                        if sibling ~= gui then
-                                            if sibling:IsA("ImageLabel") or 
-                                               sibling:IsA("ImageButton") then
-                                                isGemDisplay = true
-                                                break
-                                            end
-                                        end
-                                    end
-                                end
-                                
-                                -- 4. Eğer gem gösterimi ise GÜNCELLE
-                                if isGemDisplay then
-                                    -- Format: "99999B"
-                                    local formatted = FormatGems(MaxGemsValue)
-                                    
-                                    -- TextLabel'ı güncelle
-                                    gui.Text = formatted
-                                    
-                                    -- TextLabel'ı cache'e ekle
-                                    if not GemTextLabels[gui] then
-                                        GemTextLabels[gui] = true
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                end
+                     end
+                  end
+               end
             end
-        end
-        
-        -- SUPER AGRESIF TEXTLABEL HOOK SİSTEMİ
-        local function HookAllTextLabels()
-            if not InfiniteGems then return end
+         end)
+      end
+   end,
+})
+
+-- Mevlana Function (Spin Bot + Auto Shoot) - Düzeltilmiş
+local function StartMevlana()
+   -- Önceki bağlantıları temizle
+   if MevlanaSpinConnection then
+      MevlanaSpinConnection:Disconnect()
+      MevlanaSpinConnection = nil
+   end
+   if MevlanaShootConnection then
+      MevlanaShootConnection:Disconnect()
+      MevlanaShootConnection = nil
+   end
+   
+   States.Mevlana = true
+   
+   -- Döndürme bağlantısı
+   MevlanaSpinConnection = RunService.Heartbeat:Connect(function()
+      if not States.Mevlana then
+         if MevlanaSpinConnection then
+            MevlanaSpinConnection:Disconnect()
+            MevlanaSpinConnection = nil
+         end
+         return
+      end
+      
+      Character = LocalPlayer.Character
+      if Character and Character:FindFirstChild("HumanoidRootPart") then
+         local Root = Character.HumanoidRootPart
+         Root.CFrame = Root.CFrame * CFrame.Angles(0, math.rad(MevlanaSpeed), 0)
+      end
+   end)
+   
+   -- Otomatik atış bağlantısı
+   MevlanaShootConnection = RunService.Heartbeat:Connect(function()
+      if not States.Mevlana then
+         if MevlanaShootConnection then
+            MevlanaShootConnection:Disconnect()
+            MevlanaShootConnection = nil
+         end
+         return
+      end
+      
+      local players = Players:GetPlayers()
+      local targetPlayers = {}
+      
+      -- Rakip takımdaki oyuncuları bul
+      for _, player in pairs(players) do
+         if player ~= LocalPlayer and player.Character then
+            local targetHumanoid = player.Character:FindFirstChild("Humanoid")
+            local targetHead = player.Character:FindFirstChild("Head")
             
-            local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-            if not playerGui then return end
-            
-            for _, gui in pairs(playerGui:GetDescendants()) do
-                pcall(function()
-                    if (gui:IsA("TextLabel") or gui:IsA("TextButton")) and not GemTextLabelConnections[gui] then
-                        local text = tostring(gui.Text or "")
-                        local nameLower = gui.Name:lower()
-                        local cleanText = text:gsub(",", ""):gsub("%s+", "")
-                        local numValue = tonumber(cleanText)
-                        
-                        -- Sayı içeren TextLabel'ları bul
-                        if numValue and numValue > 0 and numValue < MaxGemsValue then
-                            local isGemDisplay = false
-                            
-                            -- Gem kontrolü
-                            if string.find(nameLower, "gem") or 
-                               string.find(nameLower, "gems") or
-                               string.find(nameLower, "diamond") or
-                               string.find(nameLower, "diamonds") then
-                                isGemDisplay = true
-                            end
-                            
-                            -- Parent kontrolü
-                            local current = gui.Parent
-                            local depth = 0
-                            while current and depth < 10 do
-                                local currentName = current.Name:lower()
-                                if string.find(currentName, "gem") or
-                                   string.find(currentName, "diamond") or
-                                   string.find(currentName, "currency") or
-                                   string.find(currentName, "resource") or
-                                   string.find(currentName, "stat") then
-                                    isGemDisplay = true
-                                    break
-                                end
-                                current = current.Parent
-                                depth = depth + 1
-                            end
-                            
-                            -- Sibling kontrolü (ImageLabel varsa)
-                            local parent = gui.Parent
-                            if parent then
-                                for _, sibling in pairs(parent:GetChildren()) do
-                                    if sibling:IsA("ImageLabel") or sibling:IsA("ImageButton") then
-                                        isGemDisplay = true
-                                        break
-                                    end
-                                end
-                            end
-                            
-                            -- Eğer gem gösterimi ise hook et
-                            if isGemDisplay then
-                                GemTextLabelConnections[gui] = true
-                                GemTextLabels[gui] = true
-                                
-                                -- Text değişikliklerini dinle
-                                gui:GetPropertyChangedSignal("Text"):Connect(function()
-                                    if InfiniteGems then
-                                        wait()
-                                        local currentText = tostring(gui.Text or "")
-                                        local currentNum = tonumber(currentText:gsub(",", ""))
-                                        if currentNum and currentNum < MaxGemsValue then
-                                            local formatted = FormatGems(MaxGemsValue)
-                                            pcall(function()
-                                                gui.Text = formatted
-                                            end)
-                                        end
-                                    end
-                                end)
-                            end
-                        end
-                    end
-                end)
+            if targetHumanoid and targetHumanoid.Health > 0 and targetHead then
+               -- Team kontrolü
+               if not player.Team or player.Team ~= LocalPlayer.Team then
+                  table.insert(targetPlayers, player)
+               end
             end
-        end
-        
-        -- HER FRAME GÜNCELLE - SUPER AGRESIF
-        GemUpdateConnection = RunService.RenderStepped:Connect(function()
-            if InfiniteGems then
-                UpdateAllGems()
-                HookAllTextLabels()
-                
-                -- Cached TextLabel'ları sürekli güncelle
-                for textLabel, _ in pairs(GemTextLabels) do
-                    if textLabel and textLabel.Parent then
-                        pcall(function()
-                            local currentText = tostring(textLabel.Text or "")
-                            local currentNum = tonumber(currentText:gsub(",", ""):gsub("B", ""):gsub("M", ""):gsub("T", ""))
-                            if not currentNum or currentNum < MaxGemsValue then
-                                textLabel.Text = FormatGems(MaxGemsValue)
-                            end
-                        end)
-                    end
-                end
+         end
+      end
+      
+      -- Sırayla hedeflere bak ve ateş et
+      if #targetPlayers > 0 then
+         currentPlayerIndex = currentPlayerIndex % #targetPlayers + 1
+         local target = targetPlayers[currentPlayerIndex]
+         
+         if target and target.Character then
+            local targetHead = target.Character:FindFirstChild("Head")
+            if targetHead then
+               -- Kamerayı hedefe çevir
+               Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, targetHead.Position)
+               
+               -- Otomatik ateş et
+               task.wait(0.05)
+               VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+               task.wait(0.01)
+               VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
             end
-        end)
-        
-        -- AYRICA SPAWN İLE DE GÜNCELLE (ÇİFT GÜVENLİK)
-        spawn(function()
-            while InfiniteGems do
-                wait(0.01) -- Her 10ms'de bir
-                UpdateAllGems()
-                HookAllTextLabels()
-            end
-        end)
-        
-        -- HER SANİYE YENİ TEXTLABEL'LARI ARA
-        spawn(function()
-            while InfiniteGems do
-                wait(1)
-                HookAllTextLabels()
-            end
-        end)
-        
-        -- Hook RemoteEvents (Agresif)
-        local function HookRemoteEvents()
-            for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
-                if obj:IsA("RemoteEvent") and not HookedRemotes[obj] then
-                    HookedRemotes[obj] = true
-                    
-                    local oldFireServer = obj.FireServer
-                    obj.FireServer = function(self, ...)
-                        local args = {...}
-                        
-                        if InfiniteGems then
-                            -- ÖNCE gem değerlerini yükselt (99999B)
-                            local remoteMaxGems = MaxGemsValue
-                            
-                            -- Tüm gem değerlerini yükselt
-                            for _, val in ipairs(AllGemValues) do
-                                if val and val.Parent then
-                                    pcall(function()
-                                        if val:IsA("IntValue") or val:IsA("NumberValue") then
-                                            val.Value = remoteMaxGems
-                                        elseif val:IsA("StringValue") then
-                                            val.Value = tostring(remoteMaxGems)
-                                        end
-                                    end)
-                                end
-                            end
-                            
-                            if GemValue and GemValue.Parent then
-                                pcall(function()
-                                    if GemValue:IsA("IntValue") or GemValue:IsA("NumberValue") then
-                                        GemValue.Value = remoteMaxGems
-                                    elseif GemValue:IsA("StringValue") then
-                                        GemValue.Value = tostring(remoteMaxGems)
-                                    end
-                                end)
-                            end
-                            
-                            -- Leaderstats'taki gem değerlerini de yükselt
-                            local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-                            if leaderstats then
-                                for _, stat in pairs(leaderstats:GetChildren()) do
-                                    if stat:IsA("IntValue") or stat:IsA("NumberValue") then
-                                        local nameLower = stat.Name:lower()
-                                        if string.find(nameLower, "gem") or 
-                                           string.find(nameLower, "gems") or
-                                           string.find(nameLower, "diamond") or
-                                           string.find(nameLower, "diamonds") then
-                                            pcall(function()
-                                                stat.Value = remoteMaxGems
-                                            end)
-                                        end
-                                    end
-                                end
-                            end
-                            
-                            -- TextLabel'ları da güncelle
-                            for textLabel, _ in pairs(GemTextLabels) do
-                                if textLabel and textLabel.Parent then
-                                    pcall(function()
-                                        textLabel.Text = FormatGems(remoteMaxGems)
-                                    end)
-                                end
-                            end
-                            
-                            -- Trade ve Pet Alım İşlemlerini Kontrol Et
-                            local isTrade = false
-                            local isPetPurchase = false
-                            local isHugePet = false
-                            
-                            for i, arg in ipairs(args) do
-                                local argStr = tostring(arg):lower()
-                                
-                                -- Trade kontrolü
-                                if string.find(argStr, "trade") or 
-                                   string.find(argStr, "exchange") or
-                                   string.find(argStr, "offer") then
-                                    isTrade = true
-                                    print("💎 Trade işlemi tespit edildi!")
-                                end
-                                
-                                -- Pet alım kontrolü
-                                if string.find(argStr, "buy") or 
-                                   string.find(argStr, "purchase") or
-                                   string.find(argStr, "pet") or
-                                   string.find(argStr, "hatch") then
-                                    isPetPurchase = true
-                                    print("💎 Pet alım işlemi tespit edildi!")
-                                end
-                                
-                                -- Huge pet kontrolü
-                                if string.find(argStr, "huge") or 
-                                   string.find(argStr, "titanic") then
-                                    isHugePet = true
-                                    print("💎 Huge pet alım işlemi tespit edildi!")
-                                end
-                                
-                                -- Negatif değer kontrolü (harcama engelleme)
-                                if type(arg) == "number" and arg < 0 then
-                                    -- Trade veya pet alımında gem harcamasını engelleme
-                                    if isTrade or isPetPurchase or isHugePet then
-                                        print("🚫 Gem harcama engellendi (Trade/Pet): " .. tostring(arg))
-                                        -- Gem değerlerini tekrar yükselt
-                                        for _, val in ipairs(AllGemValues) do
-                                            if val and val.Parent then
-                                                pcall(function()
-                                                    if val:IsA("IntValue") or val:IsA("NumberValue") then
-                                                        val.Value = remoteMaxGems
-                                                    end
-                                                end)
-                                            end
-                                        end
-                                        if GemValue and GemValue.Parent then
-                                            pcall(function()
-                                                if GemValue:IsA("IntValue") or GemValue:IsA("NumberValue") then
-                                                    GemValue.Value = remoteMaxGems
-                                                end
-                                            end)
-                                        end
-                                        -- Harcamayı engelleme - normal işleme devam et ama gem değerlerini yüksek tut
-                                    end
-                                end
-                                
-                                -- String bazlı harcama kontrolü
-                                if type(arg) == "string" then
-                                    local lower = string.lower(arg)
-                                    if string.find(lower, "spend") or 
-                                       string.find(lower, "remove") or
-                                       string.find(lower, "deduct") then
-                                        -- Trade veya pet alımında değilse engelle
-                                        if not (isTrade or isPetPurchase or isHugePet) then
-                                            print("🚫 Gem harcama isteği engellendi: " .. tostring(arg))
-                                            return
-                                        end
-                                    end
-                                end
-                            end
-                            
-                            -- Trade veya pet alımında gem değerlerini ekstra yükselt
-                            if isTrade or isPetPurchase or isHugePet then
-                                -- Gem değerlerini tekrar yükselt (ekstra güvenlik)
-                                for _, val in ipairs(AllGemValues) do
-                                    if val and val.Parent then
-                                        pcall(function()
-                                            if val:IsA("IntValue") or val:IsA("NumberValue") then
-                                                val.Value = remoteMaxGems
-                                            elseif val:IsA("StringValue") then
-                                                val.Value = tostring(remoteMaxGems)
-                                            end
-                                        end)
-                                    end
-                                end
-                                if GemValue and GemValue.Parent then
-                                    pcall(function()
-                                        if GemValue:IsA("IntValue") or GemValue:IsA("NumberValue") then
-                                            GemValue.Value = remoteMaxGems
-                                        elseif GemValue:IsA("StringValue") then
-                                            GemValue.Value = tostring(remoteMaxGems)
-                                        end
-                                    end)
-                                end
-                                
-                                -- TextLabel'ları da güncelle
-                                for textLabel, _ in pairs(GemTextLabels) do
-                                    if textLabel and textLabel.Parent then
-                                        pcall(function()
-                                            textLabel.Text = FormatGems(remoteMaxGems)
-                                        end)
-                                    end
-                                end
-                            end
-                        end
-                        
-                        return oldFireServer(self, ...)
-                    end
-                elseif obj:IsA("RemoteFunction") and not HookedRemotes[obj] then
-                    HookedRemotes[obj] = true
-                    
-                    local oldInvokeServer = obj.InvokeServer
-                    obj.InvokeServer = function(self, ...)
-                        local args = {...}
-                        
-                        if InfiniteGems then
-                            local remoteMaxGems = MaxGemsValue -- 99999B
-                            
-                            -- ÖNCE gem değerlerini yükselt
-                            for _, val in ipairs(AllGemValues) do
-                                if val and val.Parent then
-                                    pcall(function()
-                                        if val:IsA("IntValue") or val:IsA("NumberValue") then
-                                            val.Value = remoteMaxGems
-                                        elseif val:IsA("StringValue") then
-                                            val.Value = tostring(remoteMaxGems)
-                                        end
-                                    end)
-                                end
-                            end
-                            if GemValue and GemValue.Parent then
-                                pcall(function()
-                                    if GemValue:IsA("IntValue") or GemValue:IsA("NumberValue") then
-                                        GemValue.Value = remoteMaxGems
-                                    elseif GemValue:IsA("StringValue") then
-                                        GemValue.Value = tostring(remoteMaxGems)
-                                    end
-                                end)
-                            end
-                            
-                            -- Leaderstats'taki gem değerlerini de yükselt
-                            local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-                            if leaderstats then
-                                for _, stat in pairs(leaderstats:GetChildren()) do
-                                    if stat:IsA("IntValue") or stat:IsA("NumberValue") then
-                                        local nameLower = stat.Name:lower()
-                                        if string.find(nameLower, "gem") or 
-                                           string.find(nameLower, "gems") or
-                                           string.find(nameLower, "diamond") or
-                                           string.find(nameLower, "diamonds") then
-                                            pcall(function()
-                                                stat.Value = remoteMaxGems
-                                            end)
-                                        end
-                                    end
-                                end
-                            end
-                            
-                            -- TextLabel'ları da güncelle
-                            for textLabel, _ in pairs(GemTextLabels) do
-                                if textLabel and textLabel.Parent then
-                                    pcall(function()
-                                        textLabel.Text = FormatGems(remoteMaxGems)
-                                    end)
-                                end
-                            end
-                            
-                            -- Trade ve Pet Alım İşlemlerini Kontrol Et
-                            local isTrade = false
-                            local isPetPurchase = false
-                            local isHugePet = false
-                            
-                            for i, arg in ipairs(args) do
-                                local argStr = tostring(arg):lower()
-                                
-                                -- Trade kontrolü
-                                if string.find(argStr, "trade") or 
-                                   string.find(argStr, "exchange") or
-                                   string.find(argStr, "offer") then
-                                    isTrade = true
-                                    print("💎 Trade işlemi tespit edildi (Invoke)!")
-                                end
-                                
-                                -- Pet alım kontrolü
-                                if string.find(argStr, "buy") or 
-                                   string.find(argStr, "purchase") or
-                                   string.find(argStr, "pet") or
-                                   string.find(argStr, "hatch") then
-                                    isPetPurchase = true
-                                    print("💎 Pet alım işlemi tespit edildi (Invoke)!")
-                                end
-                                
-                                -- Huge pet kontrolü
-                                if string.find(argStr, "huge") or 
-                                   string.find(argStr, "titanic") then
-                                    isHugePet = true
-                                    print("💎 Huge pet alım işlemi tespit edildi (Invoke)!")
-                                end
-                            end
-                            
-                            -- Trade veya pet alımında gem değerlerini ekstra yükselt
-                            if isTrade or isPetPurchase or isHugePet then
-                                -- Gem değerlerini tekrar yükselt (ekstra güvenlik)
-                                for _, val in ipairs(AllGemValues) do
-                                    if val and val.Parent then
-                                        pcall(function()
-                                            if val:IsA("IntValue") or val:IsA("NumberValue") then
-                                                val.Value = remoteMaxGems
-                                            elseif val:IsA("StringValue") then
-                                                val.Value = tostring(remoteMaxGems)
-                                            end
-                                        end)
-                                    end
-                                end
-                                if GemValue and GemValue.Parent then
-                                    pcall(function()
-                                        if GemValue:IsA("IntValue") or GemValue:IsA("NumberValue") then
-                                            GemValue.Value = remoteMaxGems
-                                        elseif GemValue:IsA("StringValue") then
-                                            GemValue.Value = tostring(remoteMaxGems)
-                                        end
-                                    end)
-                                end
-                                
-                                -- TextLabel'ları da güncelle
-                                for textLabel, _ in pairs(GemTextLabels) do
-                                    if textLabel and textLabel.Parent then
-                                        pcall(function()
-                                            textLabel.Text = FormatGems(remoteMaxGems)
-                                        end)
-                                    end
-                                end
-                            end
-                            
-                            -- Gem harcama isteklerini engelle (trade/pet alımında değilse)
-                            if not (isTrade or isPetPurchase or isHugePet) then
-                                for i, arg in ipairs(args) do
-                                    if type(arg) == "number" and arg < 0 then
-                                        print("🚫 Gem harcama engellendi (Invoke): " .. tostring(arg))
-                                        return 0, "CANCELLED"
-                                    end
-                                end
-                            end
-                        end
-                        
-                        return oldInvokeServer(self, ...)
-                    end
-                end
-            end
-        end
-        
-        HookRemoteEvents()
-        
-        ReplicatedStorage.DescendantAdded:Connect(function(obj)
-            if (obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction")) and InfiniteGems then
-                HookRemoteEvents()
-            end
-        end)
-        
-        -- Workspace'teki yeni gem değerlerini dinle
-        Workspace.DescendantAdded:Connect(function(obj)
-            if (obj:IsA("IntValue") or obj:IsA("NumberValue") or obj:IsA("StringValue")) and InfiniteGems then
-                local nameLower = obj.Name:lower()
-                if string.find(nameLower, "gem") or 
-                   string.find(nameLower, "gems") or
-                   string.find(nameLower, "diamond") or
-                   string.find(nameLower, "diamonds") then
-                    table.insert(AllGemValues, obj)
-                    print("💎 Yeni gem değeri bulundu: " .. obj.Name)
-                end
-            end
-        end)
-        
-        -- Leaderstats eklendiğinde tekrar ara
-        LocalPlayer.ChildAdded:Connect(function(child)
-            if child.Name == "leaderstats" and InfiniteGems then
-                wait(1)
-                GemValue, AllGemValues = FindGemValue()
-                if #AllGemValues > 0 then
-                    print("💎 Yeni gem değerleri bulundu! (" .. #AllGemValues .. " adet)")
-                end
-            end
-        end)
-    else
-        print("❌ Sınırsız gem kapatıldı")
-    end
+         end
+      end
+      
+      task.wait(0.1)
+   end)
+   
+   Rayfield:Notify({
+      Title = "🌀 Mevlana",
+      Content = "Mevlana aktif edildi!",
+      Duration = 2,
+      Image = 4483362458,
+   })
 end
 
--- Auto Egg Opener
-local function SetAutoEggOpener(enabled)
-    AutoEggOpener = enabled
-    
-    if enabled then
-        spawn(function()
-            while AutoEggOpener do
-                wait(1)
-                
-                local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-                if playerGui then
-                    for _, gui in pairs(playerGui:GetDescendants()) do
-                        if gui:IsA("TextButton") or gui:IsA("ImageButton") then
-                            local text = tostring(gui.Text or "")
-                            local nameLower = gui.Name:lower()
-                            
-                            if string.find(text:lower(), "open") or
-                               string.find(text:lower(), "hatch") or
-                               string.find(nameLower, "egg") or
-                               string.find(nameLower, "hatch") then
-                                if not string.find(text:lower(), "max") then
-                                    pcall(function()
-                                        if gui:IsA("GuiButton") then
-                                            gui:Activate()
-                                        end
-                                    end)
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    end
+local function StopMevlana()
+   States.Mevlana = false
+   
+   -- Bağlantıları kapat
+   if MevlanaSpinConnection then
+      MevlanaSpinConnection:Disconnect()
+      MevlanaSpinConnection = nil
+   end
+   if MevlanaShootConnection then
+      MevlanaShootConnection:Disconnect()
+      MevlanaShootConnection = nil
+   end
+   
+   Rayfield:Notify({
+      Title = "🌀 Mevlana",
+      Content = "Mevlana devre dışı bırakıldı!",
+      Duration = 2,
+      Image = 4483362458,
+   })
 end
 
--- Hamburger Menu Items
-CreateSidebarItem("Ana Sayfa", "🏠", function()
-    -- Ana sayfa içeriği
-end)
+MainTab:CreateToggle({
+   Name = "🌀 Mevlana",
+   CurrentValue = false,
+   Flag = "Mevlana",
+   Callback = function(Value)
+      if Value then
+         StartMevlana()
+      else
+         StopMevlana()
+      end
+   end,
+})
 
-CreateSidebarItem("Sınırsız Gem", "💎", function()
-    InfiniteGems = not InfiniteGems
-    SetInfiniteGems(InfiniteGems)
-end)
+MainTab:CreateSlider({
+   Name = "Mevlana Hızı",
+   Range = {1, 50},
+   Increment = 1,
+   Suffix = "Hız",
+   CurrentValue = 20,
+   Flag = "MevlanaSpeed",
+   Callback = function(Value)
+      MevlanaSpeed = Value
+   end,
+})
 
-CreateSidebarItem("Auto Egg", "🥚", function()
-    AutoEggOpener = not AutoEggOpener
-    SetAutoEggOpener(AutoEggOpener)
-end)
+-- Mevlana Keybind
+MainTab:CreateKeybind({
+   Name = "Mevlana Tuşu (X)",
+   CurrentKeybind = "X",
+   HoldToInteract = false,
+   Flag = "MevlanaKeybind",
+   Callback = function(Keybind)
+      MevlanaKeybind = Keybind
+   end,
+})
 
-CreateSidebarItem("Noclip", "👻", function()
-    Noclip = not Noclip
-end)
-
-CreateSidebarItem("Fly", "✈️", function()
-    Fly = not Fly
-end)
-
-CreateSidebarItem("ESP", "👁️", function()
-    ESP = not ESP
-end)
-
--- Toggles
-CreateToggle("💎 Sınırsız Gem", "Trade edilebilir, Huge pet alabilir - 999 Qnd", false, function(state)
-    InfiniteGems = state
-    SetInfiniteGems(state)
-end)
-
-CreateToggle("🥚 Otomatik Egg Açıcı", "Yumurtaları otomatik olarak açar", false, function(state)
-    AutoEggOpener = state
-    SetAutoEggOpener(state)
-end)
-
-CreateToggle("👻 Noclip", "Duvarlardan geç", false, function(state)
-    Noclip = state
-end)
-
-CreateToggle("✈️ Fly", "Uçma modu (WASD + Space/Shift)", false, function(state)
-    Fly = state
-end)
-
-CreateToggle("👁️ ESP", "Oyun objelerini göster", false, function(state)
-    ESP = state
-end)
-
--- Fly System
-local BodyVelocity = Instance.new("BodyVelocity")
-BodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-BodyVelocity.Velocity = Vector3.new(0, 0, 0)
-if HumanoidRootPart then
-    BodyVelocity.Parent = HumanoidRootPart
-end
-
-RunService.RenderStepped:Connect(function()
-    if Character and HumanoidRootPart and Fly then
-        if not BodyVelocity.Parent then
-            BodyVelocity.Parent = HumanoidRootPart
-        end
-        BodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-        BodyVelocity.Velocity = Camera.CFrame.LookVector * (UserInputService:IsKeyDown(Enum.KeyCode.W) and 50 or 0) +
-                                 Camera.CFrame.RightVector * (UserInputService:IsKeyDown(Enum.KeyCode.D) and 50 or 0) +
-                                 Camera.CFrame.RightVector * (UserInputService:IsKeyDown(Enum.KeyCode.A) and -50 or 0) +
-                                 Camera.CFrame.LookVector * (UserInputService:IsKeyDown(Enum.KeyCode.S) and -50 or 0) +
-                                 Vector3.new(0, (UserInputService:IsKeyDown(Enum.KeyCode.Space) and 50 or 0) + (UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and -50 or 0), 0)
-    else
-        if BodyVelocity then
-            BodyVelocity.MaxForce = Vector3.new(0, 0, 0)
-            BodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        end
-    end
-end)
-
--- Noclip System
-RunService.Stepped:Connect(function()
-    if Character then
-        if Noclip then
-            for _, v in pairs(Character:GetDescendants()) do
-                if v:IsA("BasePart") and v.CanCollide then
-                    v.CanCollide = false
-                end
-            end
-        else
-            for _, v in pairs(Character:GetDescendants()) do
-                if v:IsA("BasePart") then
-                    v.CanCollide = true
-                end
-            end
-        end
-    end
-end)
-
--- Character Updates
-LocalPlayer.CharacterAdded:Connect(function(char)
-    Character = char
-    HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-    BodyVelocity.Parent = HumanoidRootPart
-end)
-
--- Update ScrollFrame
-ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    ContentFrame.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 20)
-end)
-
--- Open Key (F5)
+-- Mevlana tuş dinleyicisi
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed then
-        if input.KeyCode == Enum.KeyCode.F5 then
-            MainGui.Enabled = not MainGui.Enabled
-        end
-    end
+   if gameProcessed then return end
+   
+   if input.KeyCode == Enum.KeyCode[MevlanaKeybind] then
+      -- Toggle Mevlana durumu
+      if States.Mevlana then
+         StopMevlana()
+      else
+         StartMevlana()
+      end
+   end
 end)
 
--- Script Başlatıldı
-print("============================================")
-print("✅ PROFESYONEL SCRIPT HUB YÜKLENDİ!")
-print("📌 F5 tuşu ile GUI'yi aç/kapat")
-print("💎 Sınırsız Gem sistemini aktifleştirmek için GUI'yi açın")
-print("============================================")
+-- Movement Section
+MainTab:CreateSection("🏃 Movement")
 
+-- Fly Function
+MainTab:CreateToggle({
+   Name = "Fly",
+   CurrentValue = false,
+   Flag = "Fly",
+   Callback = function(Value)
+      States.Fly = Value
+      if Value then
+         Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+         HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+         
+         local BodyVelocity = Instance.new("BodyVelocity")
+         BodyVelocity.Name = "FlyVelocity"
+         BodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+         BodyVelocity.Velocity = Vector3.new(0, 0, 0)
+         BodyVelocity.Parent = HumanoidRootPart
+         
+         local BodyGyro = Instance.new("BodyGyro")
+         BodyGyro.Name = "FlyGyro"
+         BodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+         BodyGyro.P = 9e4
+         BodyGyro.Parent = HumanoidRootPart
+         
+         local connection
+         connection = RunService.Heartbeat:Connect(function()
+            if not States.Fly then
+               connection:Disconnect()
+               if HumanoidRootPart:FindFirstChild("FlyVelocity") then
+                  HumanoidRootPart.FlyVelocity:Destroy()
+               end
+               if HumanoidRootPart:FindFirstChild("FlyGyro") then
+                  HumanoidRootPart.FlyGyro:Destroy()
+               end
+               return
+            end
+            
+            if not HumanoidRootPart:FindFirstChild("FlyVelocity") then return end
+            
+            BodyGyro.CFrame = Camera.CFrame
+            
+            local cam = Camera.CFrame
+            local moveVector = Vector3.new(0, 0, 0)
+            
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+               moveVector = moveVector + cam.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+               moveVector = moveVector - cam.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+               moveVector = moveVector - cam.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+               moveVector = moveVector + cam.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+               moveVector = moveVector + Vector3.new(0, 1, 0)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+               moveVector = moveVector - Vector3.new(0, 1, 0)
+            end
+            
+            BodyVelocity.Velocity = moveVector * FlySpeed
+         end)
+      else
+         if HumanoidRootPart and HumanoidRootPart:FindFirstChild("FlyVelocity") then
+            HumanoidRootPart.FlyVelocity:Destroy()
+         end
+         if HumanoidRootPart and HumanoidRootPart:FindFirstChild("FlyGyro") then
+            HumanoidRootPart.FlyGyro:Destroy()
+         end
+      end
+   end,
+})
+
+MainTab:CreateSlider({
+   Name = "Fly Speed",
+   Range = {1, 200},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 50,
+   Flag = "FlySpeed",
+   Callback = function(Value)
+      FlySpeed = Value
+   end,
+})
+
+-- Noclip Function
+MainTab:CreateToggle({
+   Name = "Noclip",
+   CurrentValue = false,
+   Flag = "Noclip",
+   Callback = function(Value)
+      States.Noclip = Value
+      
+      local connection
+      if Value then
+         connection = RunService.Stepped:Connect(function()
+            if States.Noclip then
+               Character = LocalPlayer.Character
+               if Character then
+                  for _, part in pairs(Character:GetDescendants()) do
+                     if part:IsA("BasePart") then
+                        part.CanCollide = false
+                     end
+                  end
+               end
+            end
+         end)
+      end
+   end,
+})
+
+-- Infinite Jump
+MainTab:CreateToggle({
+   Name = "Infinite Jump",
+   CurrentValue = false,
+   Flag = "InfiniteJump",
+   Callback = function(Value)
+      States.InfiniteJump = Value
+   end,
+})
+
+UserInputService.JumpRequest:Connect(function()
+   if States.InfiniteJump and Character and Character:FindFirstChild("Humanoid") then
+      Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+   end
+end)
+
+-- Visual Section
+MainTab:CreateSection("👁️ Visual")
+
+-- Wallhack Function
+MainTab:CreateToggle({
+   Name = "Wallhack",
+   CurrentValue = false,
+   Flag = "Wallhack",
+   Callback = function(Value)
+      States.Wallhack = Value
+      if Value then
+         for _, part in pairs(Workspace:GetDescendants()) do
+            if part:IsA("BasePart") and part.Transparency < 1 and not part:IsDescendantOf(Character) then
+               if not part:FindFirstChild("OriginalTransparency") then
+                  local marker = Instance.new("NumberValue")
+                  marker.Name = "OriginalTransparency"
+                  marker.Value = part.Transparency
+                  marker.Parent = part
+               end
+               part.Transparency = 0.7
+            end
+         end
+      else
+         for _, part in pairs(Workspace:GetDescendants()) do
+            if part:IsA("BasePart") and part:FindFirstChild("OriginalTransparency") then
+               part.Transparency = part.OriginalTransparency.Value
+               part.OriginalTransparency:Destroy()
+            end
+         end
+      end
+   end,
+})
+
+-- FullBright
+MainTab:CreateToggle({
+   Name = "FullBright",
+   CurrentValue = false,
+   Flag = "FullBright",
+   Callback = function(Value)
+      if Value then
+         game:GetService("Lighting").Brightness = 2
+         game:GetService("Lighting").ClockTime = 14
+         game:GetService("Lighting").FogEnd = 100000
+         game:GetService("Lighting").GlobalShadows = false
+         game:GetService("Lighting").OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+      else
+         game:GetService("Lighting").Brightness = 1
+         game:GetService("Lighting").ClockTime = 12
+         game:GetService("Lighting").FogEnd = 100000
+         game:GetService("Lighting").GlobalShadows = true
+         game:GetService("Lighting").OutdoorAmbient = Color3.fromRGB(70, 70, 70)
+      end
+   end,
+})
+
+-- Character Handler
+LocalPlayer.CharacterAdded:Connect(function(char)
+   Character = char
+   task.wait(0.1)
+   HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+   Humanoid = char:WaitForChild("Humanoid")
+end)
+
+-- Notification
+Rayfield:Notify({
+   Title = "✅ Script Loaded",
+   Content = "Premium Hub başarıyla yüklendi! Tüm özellikler kusursuz çalışıyor.",
+   Duration = 5,
+   Image = 4483362458,
+})
+
+print("✅ Premium Script Hub Aktif!")
